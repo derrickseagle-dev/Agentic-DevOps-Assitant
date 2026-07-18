@@ -64,6 +64,8 @@ export const api = {
 
   // Dashboard
   getDashboard: (teamId: string) => request<any>(`/api/teams/${teamId}/dashboard`),
+  getDashboardActivity: (teamId: string) =>
+    request<{ recentRuns: any[]; recentDeployments: any[] }>(`/api/teams/${teamId}/dashboard/activity`),
 
   // Repositories
   listRepositories: (teamId: string) =>
