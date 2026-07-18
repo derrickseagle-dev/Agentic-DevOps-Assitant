@@ -195,7 +195,18 @@ export const auditLogs = sqliteTable("audit_logs", {
 });
 
 // ============================================================
-// 11. notifications
+// 11. beta_signups (landing page email signups — no auth required)
+// ============================================================
+export const betaSignups = sqliteTable("beta_signups", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+// ============================================================
+// 12. notifications
 // ============================================================
 export const notifications = sqliteTable("notifications", {
   id: text("id").primaryKey(), // UUID
