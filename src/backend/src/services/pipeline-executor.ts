@@ -416,6 +416,17 @@ export async function rejectCheckpoint(
     })
     .where(eq(pipelineRuns.id, runId));
 
+  // Mark any remaining pending stages as skipped
+  await db
+    .update(runStages)
+    .set({ status: "skipped", finishedAt: now })
+    .where(
+      and(
+        eq(runStages.pipelineRunId, runId),
+        eq(runStages.status, "pending")
+      )
+    );
+
   // Update GitHub check run
   await updateGitHubCheckRun(runId, "failure");
 

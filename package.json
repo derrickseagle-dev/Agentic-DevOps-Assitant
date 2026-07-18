@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun run dev:backend & bun run dev:frontend & wait",
+    "dev": "bun run dev:backend & bun run dev:frontend & bun run dev:worker & wait",
     "dev:backend": "bun run --watch src/backend/src/index.ts",
     "dev:frontend": "vite --port 3000 --config src/frontend/vite.config.ts",
     "dev:worker": "bun run --watch worker/src/index.ts",
