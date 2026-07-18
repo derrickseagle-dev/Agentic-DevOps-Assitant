@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db";
 import { teams, teamMembers, users, notifications } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { authMiddleware } from "../middleware/auth";
 import { teamScopeMiddleware } from "../middleware/team-scope";
@@ -26,7 +26,7 @@ teamRoutes.get("/", async (c) => {
       plan: teams.plan,
       role: teamMembers.role,
       joinedAt: teamMembers.joinedAt,
-      memberCount: db.$count(teamMembers, eq(teamMembers.teamId, teams.id)),
+      memberCount: sql<number>`(SELECT count(*) FROM team_members WHERE team_members.team_id = teams.id)`,
     })
     .from(teamMembers)
     .innerJoin(teams, eq(teamMembers.teamId, teams.id))
@@ -55,7 +55,7 @@ teamRoutes.post("/", async (c) => {
     return c.json({ error: "A team with this slug already exists" }, 409);
   }
 
-  const now = new Date().toISOString();
+  const now = new Date();
   const teamId = uuidv4();
 
   await db.insert(teams).values({
@@ -127,7 +127,7 @@ teamRoutes.patch("/:teamId", teamScopeMiddleware, async (c) => {
     return c.json({ error: "Invalid input", details: parsed.error.flatten() }, 400);
   }
 
-  const updateData: Record<string, any> = { updatedAt: new Date().toISOString() };
+  const updateData: Record<string, any> = { updatedAt: new Date() };
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name;
   if (parsed.data.plan !== undefined) updateData.plan = parsed.data.plan;
 
@@ -209,7 +209,7 @@ teamRoutes.post("/:teamId/members", teamScopeMiddleware, async (c) => {
     return c.json({ error: "User is already a member of this team" }, 409);
   }
 
-  const now = new Date().toISOString();
+  const now = new Date();
   const memberId = uuidv4();
 
   await db.insert(teamMembers).values({

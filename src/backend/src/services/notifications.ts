@@ -69,7 +69,7 @@ export async function sendCheckpointNotification(
 
     const teamId = pipelineRow[0]?.teamId || "";
 
-    const now = new Date().toISOString();
+    const now = new Date();
     const title = `Approval required: ${stageConfig.name}`;
     const body =
       stageConfig.message ||
@@ -130,7 +130,7 @@ export async function sendRunFailedNotification(
     const data = runRows[0];
     if (!data.triggeredBy) return; // No one to notify
 
-    const now = new Date().toISOString();
+    const now = new Date();
     const title = `Pipeline failed: ${data.pipelineName}`;
     const body = `Pipeline "${data.pipelineName}" failed on ${data.repositoryName} (${data.branch} / ${data.commitSha?.substring(0, 7)}).`;
 
@@ -187,7 +187,7 @@ export async function sendDeploymentNotification(
     const data = deployRows[0];
     if (!data.triggeredBy) return;
 
-    const now = new Date().toISOString();
+    const now = new Date();
     const envLabel = data.environment || "production";
     const isSuccess = data.status === "success";
     const title = isSuccess

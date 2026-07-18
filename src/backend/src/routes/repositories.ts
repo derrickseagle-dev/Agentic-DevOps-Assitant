@@ -129,7 +129,7 @@ repositoryRoutes.post("/", async (c) => {
     return c.json({ error: "Repository is already connected to this team" }, 409);
   }
 
-  const now = new Date().toISOString();
+  const now = new Date();
   const repoId = uuidv4();
 
   await db.insert(repositories).values({

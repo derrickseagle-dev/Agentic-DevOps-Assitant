@@ -54,7 +54,7 @@ interface PipelineConfig {
 // ============================================================
 
 export async function createRunStages(runId: string, config: PipelineConfig): Promise<void> {
-  const now = new Date().toISOString();
+  const now = new Date();
 
   for (const stage of config.stages) {
     await db.insert(runStages).values({
@@ -99,7 +99,7 @@ async function advanceToNextStage(runId: string): Promise<void> {
     )
     .limit(1);
 
-  const now = new Date().toISOString();
+  const now = new Date();
 
   if (nextStage.length === 0) {
     // No more stages — run is complete!
@@ -138,8 +138,8 @@ export async function executeStage(runStageId: string): Promise<void> {
 
   const stage = stageRow[0];
   const stageConfig: StageConfig = JSON.parse(stage.stageConfig as string);
-  const now = new Date().toISOString();
-  const timestamp = now.replace("T", " ").substring(0, 19);
+  const now = new Date();
+  const timestamp = now.toISOString().replace("T", " ").substring(0, 19);
 
   // Mark stage as running
   await db
@@ -222,7 +222,7 @@ export async function executeStage(runStageId: string): Promise<void> {
       .set({
         status: "success",
         logOutput: logLines.join("\n"),
-        finishedAt: new Date().toISOString(),
+        finishedAt: new Date(),
       })
       .where(eq(runStages.id, runStageId));
 
@@ -245,7 +245,7 @@ export async function executeStage(runStageId: string): Promise<void> {
     // Simulate delay
     await new Promise((r) => setTimeout(r, 200));
 
-    const deployFinishTime = new Date().toISOString();
+    const deployFinishTime = new Date();
 
     await db
       .update(runStages)
@@ -290,7 +290,7 @@ export async function approveCheckpoint(
   userId: string,
   comment?: string
 ): Promise<void> {
-  const now = new Date().toISOString();
+  const now = new Date();
 
   // Update the checkpoint approval
   const approvalRows = await db
@@ -319,7 +319,7 @@ export async function approveCheckpoint(
     .where(eq(checkpointApprovals.id, approvalRows[0].id));
 
   // Mark the stage as success
-  const timestamp = now.replace("T", " ").substring(0, 19);
+  const timestamp = now.toISOString().replace("T", " ").substring(0, 19);
   const existingStage = await db
     .select()
     .from(runStages)
@@ -359,7 +359,7 @@ export async function rejectCheckpoint(
   userId: string,
   comment?: string
 ): Promise<void> {
-  const now = new Date().toISOString();
+  const now = new Date();
 
   // Update the checkpoint approval
   const approvalRows = await db
@@ -388,7 +388,7 @@ export async function rejectCheckpoint(
     .where(eq(checkpointApprovals.id, approvalRows[0].id));
 
   // Mark the stage as failed
-  const timestamp = now.replace("T", " ").substring(0, 19);
+  const timestamp = now.toISOString().replace("T", " ").substring(0, 19);
   const existingStage = await db
     .select()
     .from(runStages)
@@ -432,7 +432,7 @@ export async function rejectCheckpoint(
 // ============================================================
 
 export async function cancelRun(runId: string): Promise<void> {
-  const now = new Date().toISOString();
+  const now = new Date();
 
   await db
     .update(pipelineRuns)
@@ -633,7 +633,7 @@ export async function processRunningRuns(): Promise<number> {
 
     if (currentStage.length === 0) {
       // No stage at current order — run is complete
-      const now = new Date().toISOString();
+      const now = new Date();
       await db
         .update(pipelineRuns)
         .set({ status: "success", finishedAt: now })
@@ -670,7 +670,7 @@ export async function processRunningRuns(): Promise<number> {
           status: "pending",
           comment: null,
           actedAt: null,
-          createdAt: new Date().toISOString(),
+          createdAt: new Date(),
         });
       }
       // The run stays in awaiting_approval — don't advance until API call

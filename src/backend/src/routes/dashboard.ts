@@ -28,16 +28,19 @@ dashboardRoutes.use("/:teamId/*", teamScopeMiddleware);
 dashboardRoutes.get("/:teamId/dashboard", async (c) => {
   const teamId = c.get("teamId") as string;
 
-  // Date boundaries
+  // Date boundaries (Date objects for Drizzle timestamp compatibility)
   const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   // 1. Active pipelines count
-  const activePipelineCount = await db.$count(
-    pipelines,
-    and(eq(pipelines.teamId, teamId), eq(pipelines.status, "active"))
-  );
+  const activePipelineResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(pipelines)
+    .where(
+      and(eq(pipelines.teamId, teamId), eq(pipelines.status, "active"))
+    );
+  const activePipelineCount = Number(activePipelineResult[0]?.count ?? 0);
 
   // 2. Recent runs — count of runs in last 7 days
   // Join through repositories to scope by team
