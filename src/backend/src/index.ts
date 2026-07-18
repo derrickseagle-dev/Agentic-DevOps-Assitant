@@ -6,6 +6,8 @@ import dashboardRoutes from "./routes/dashboard";
 import repositoryRoutes from "./routes/repositories";
 import pipelineRoutes from "./routes/pipelines";
 import runRoutes from "./routes/runs";
+import notificationRoutes from "./routes/notifications";
+import deploymentRoutes from "./routes/deployments";
 
 // Run migrations on startup
 import "./db/migrate";
@@ -28,6 +30,12 @@ app.route("/auth", authRoutes);
 
 // Dashboard routes first (more specific paths before generic /:teamId)
 app.route("/api/teams", dashboardRoutes);
+
+// Notification routes
+app.route("/api/teams", notificationRoutes);
+
+// Deployment routes
+app.route("/api/teams", deploymentRoutes);
 
 // Repository routes (with /:teamId/repositories sub-routes)
 app.route("/api/teams/:teamId/repositories", repositoryRoutes);

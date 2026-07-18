@@ -67,6 +67,13 @@ export default function PipelineDetail() {
     enabled: !!teamId && !!pipelineId,
   });
 
+  // Deployments query
+  const { data: deploymentsData } = useQuery({
+    queryKey: ["deployments", teamId, pipelineId],
+    queryFn: () => api.listDeployments(teamId!, { pipelineId }),
+    enabled: !!teamId && !!pipelineId,
+  });
+
   const updateMutation = useMutation({
     mutationFn: (updateData: any) =>
       api.updatePipeline(teamId!, pipelineId!, updateData),
@@ -574,6 +581,57 @@ export default function PipelineDetail() {
                   <ChevronRight className="h-3.5 w-3.5 text-[#666680]" />
                 </div>
               </Link>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Deployment History */}
+      {deploymentsData?.deployments && deploymentsData.deployments.length > 0 && (
+        <div className="mt-6 rounded-xl border border-[#252540] bg-[#131320] p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-[#e4e4f0]">
+              Deployment History
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {deploymentsData.deployments.slice(0, 10).map((deploy: any) => (
+              <div
+                key={deploy.id}
+                className="flex items-center justify-between rounded-lg border border-[#252540] bg-[#1a1a2e] p-3"
+              >
+                <div className="flex items-center gap-3">
+                  {deploy.status === "success" ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  ) : deploy.status === "failed" ? (
+                    <XCircle className="h-4 w-4 text-red-400" />
+                  ) : (
+                    <Clock className="h-4 w-4 text-amber-400" />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-[#e4e4f0]">
+                      {deploy.environment}
+                      <span className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                        deploy.environment === "production"
+                          ? "bg-red-400/10 text-red-400"
+                          : deploy.environment === "staging"
+                          ? "bg-amber-400/10 text-amber-400"
+                          : "bg-blue-400/10 text-blue-400"
+                      }`}>
+                        {deploy.environment}
+                      </span>
+                    </p>
+                    <p className="text-xs text-[#666680]">
+                      {deploy.branch} • {deploy.commitSha?.substring(0, 7)}
+                      {deploy.deployedAt && ` • ${new Date(deploy.deployedAt).toLocaleDateString()}`}
+                    </p>
+                  </div>
+                </div>
+                <span className={`text-xs font-medium ${
+                  deploy.status === "success" ? "text-emerald-400" : "text-red-400"
+                }`}>
+                  {deploy.status}
+                </span>
+              </div>
             ))}
           </div>
         </div>
