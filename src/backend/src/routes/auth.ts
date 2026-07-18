@@ -48,7 +48,7 @@ authRoutes.get("/github/callback", async (c) => {
         client_id: clientId,
         client_secret: clientSecret,
         code,
-        state,
+        redirect_uri: `${process.env.PUBLIC_APP_URL || "http://localhost:5173"}/auth/callback`,
       }),
     });
 
@@ -120,7 +120,7 @@ authRoutes.get("/github/callback", async (c) => {
   }
 
   // Upsert user in database
-  const now = new Date().toISOString();
+  const now = new Date();
   const existingUser = await db
     .select()
     .from(users)
