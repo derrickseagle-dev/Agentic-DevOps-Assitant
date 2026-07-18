@@ -101,4 +101,18 @@ export const api = {
   // Repositories
   analyzeRepo: (teamId: string, repoId: string) =>
     request<any>(`/api/teams/${teamId}/repositories/${repoId}/analyze`, { method: "POST" }),
+
+  // Pipeline Runs
+  listRuns: (teamId: string, pipelineId: string) =>
+    request<any>(`/api/teams/${teamId}/pipelines/${pipelineId}/runs`),
+  triggerRun: (teamId: string, pipelineId: string, data: { branch: string; commitSha?: string; commitMessage?: string }) =>
+    request<any>(`/api/teams/${teamId}/pipelines/${pipelineId}/runs`, { method: "POST", body: data }),
+  getRun: (teamId: string, pipelineId: string, runId: string) =>
+    request<any>(`/api/teams/${teamId}/pipelines/${pipelineId}/runs/${runId}`),
+  cancelRun: (teamId: string, pipelineId: string, runId: string) =>
+    request<any>(`/api/teams/${teamId}/pipelines/${pipelineId}/runs/${runId}/cancel`, { method: "POST" }),
+  approveCheckpoint: (teamId: string, pipelineId: string, runId: string, comment?: string) =>
+    request<any>(`/api/teams/${teamId}/pipelines/${pipelineId}/runs/${runId}/approve`, { method: "POST", body: { comment } }),
+  rejectCheckpoint: (teamId: string, pipelineId: string, runId: string, comment?: string) =>
+    request<any>(`/api/teams/${teamId}/pipelines/${pipelineId}/runs/${runId}/reject`, { method: "POST", body: { comment } }),
 };
