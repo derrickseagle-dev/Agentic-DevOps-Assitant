@@ -177,8 +177,9 @@ export async function executeStage(runStageId: string): Promise<void> {
       .where(eq(runStages.id, runStageId));
 
     // Create checkpoint approval record
+    const checkpointApprovalId = uuidv4();
     await db.insert(checkpointApprovals).values({
-      id: uuidv4(),
+      id: checkpointApprovalId,
       runStageId,
       pipelineRunId: currentRun.id,
       approvedBy: null,
@@ -194,27 +195,11 @@ export async function executeStage(runStageId: string): Promise<void> {
       .set({ status: "awaiting_approval" })
       .where(eq(pipelineRuns.id, currentRun.id));
 
-    // Create notification for each approver (stub)
-    if (stageConfig.approvers) {
-      for (const approverId of stageConfig.approvers) {
-        try {
-          const { notifications } = await import("../db/schema");
-          await db.insert(notifications).values({
-            id: uuidv4(),
-            userId: approverId,
-            teamId: "", // Will be filled from pipeline's team context
-            type: "checkpoint_pending",
-            title: `Approval required: ${stageConfig.name}`,
-            body: stageConfig.message || `Pipeline run requires your approval for "${stageConfig.name}"`,
-            read: false,
-            actionUrl: `/pipelines/${currentRun.pipelineId}/runs/${currentRun.id}`,
-            createdAt: now,
-          });
-        } catch {
-          // Notification is best-effort
-        }
-      }
-    }
+    // Send checkpoint notification to all approvers
+    const { sendCheckpointNotification } = await import("./notifications");
+    sendCheckpointNotification(checkpointApprovalId).catch(() => {
+      // Best-effort
+    });
 
     console.log(`[executor] Checkpoint reached: ${stageConfig.name} — run ${currentRun.id} paused`);
   } else if (stageConfig.type === "script") {
@@ -272,8 +257,9 @@ export async function executeStage(runStageId: string): Promise<void> {
       .where(eq(runStages.id, runStageId));
 
     // Record deployment
+    const deployId = uuidv4();
     await db.insert(deployments).values({
-      id: uuidv4(),
+      id: deployId,
       pipelineRunId: currentRun.id,
       repositoryId: currentRun.repositoryId,
       environment: env,
@@ -284,6 +270,11 @@ export async function executeStage(runStageId: string): Promise<void> {
 
     console.log(`[executor] Deploy stage complete: ${stageConfig.name} → ${env} — run ${currentRun.id}`);
 
+    // Send deployment notification
+    const { sendDeploymentNotification } = await import("./notifications");
+    sendDeploymentNotification(deployId).catch(() => {
+      // Best-effort
+    });
     // Advance to next stage
     await advanceToNextStage(currentRun.id);
   }
@@ -429,6 +420,11 @@ export async function rejectCheckpoint(
   await updateGitHubCheckRun(runId, "failure");
 
   console.log(`[executor] Checkpoint rejected for run ${runId}, stage ${stageId}`);
+  // Send run failed notification
+  const { sendRunFailedNotification } = await import("./notifications");
+  sendRunFailedNotification(runId).catch(() => {
+    // Best-effort
+  });
 }
 
 // ============================================================

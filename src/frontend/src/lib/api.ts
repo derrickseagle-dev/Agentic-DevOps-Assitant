@@ -115,4 +115,22 @@ export const api = {
     request<any>(`/api/teams/${teamId}/pipelines/${pipelineId}/runs/${runId}/approve`, { method: "POST", body: { comment } }),
   rejectCheckpoint: (teamId: string, pipelineId: string, runId: string, comment?: string) =>
     request<any>(`/api/teams/${teamId}/pipelines/${pipelineId}/runs/${runId}/reject`, { method: "POST", body: { comment } }),
+
+  // Notifications
+  listNotifications: (teamId: string) =>
+    request<{ notifications: any[]; unreadCount: number }>(`/api/teams/${teamId}/notifications`),
+  markNotificationRead: (teamId: string, notificationId: string) =>
+    request<any>(`/api/teams/${teamId}/notifications/${notificationId}/read`, { method: "PATCH" }),
+
+  // Deployments
+  listDeployments: (teamId: string, filters?: { repoId?: string; pipelineId?: string; environment?: string }) => {
+    const params = new URLSearchParams();
+    if (filters?.repoId) params.set("repoId", filters.repoId);
+    if (filters?.pipelineId) params.set("pipelineId", filters.pipelineId);
+    if (filters?.environment) params.set("environment", filters.environment);
+    const query = params.toString();
+    return request<{ deployments: any[] }>(`/api/teams/${teamId}/deployments${query ? `?${query}` : ""}`);
+  },
+  getDeployment: (teamId: string, deployId: string) =>
+    request<any>(`/api/teams/${teamId}/deployments/${deployId}`),
 };
