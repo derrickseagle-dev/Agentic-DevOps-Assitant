@@ -8,6 +8,7 @@ import { teamScopeMiddleware } from "../middleware/team-scope";
 import { connectRepositorySchema } from "../../../shared/src/schemas";
 import { getGitHubToken } from "../lib/encryption";
 import { Octokit } from "octokit";
+import { analyzeRepository } from "../services/ai-generator";
 
 const repositoryRoutes = new Hono();
 
@@ -153,6 +154,58 @@ repositoryRoutes.post("/", async (c) => {
     .limit(1);
 
   return c.json(created[0], 201);
+});
+
+// ============================================================
+// POST /api/teams/:teamId/repositories/:repoId/analyze — AI analysis
+// ============================================================
+repositoryRoutes.post("/:repoId/analyze", async (c) => {
+  const teamId = c.get("teamId") as string;
+  const userId = c.get("userId") as string;
+  const repoId = c.req.param("repoId");
+
+  // Verify repo belongs to this team
+  const repo = await db
+    .select()
+    .from(repositories)
+    .where(and(eq(repositories.id, repoId), eq(repositories.teamId, teamId)))
+    .limit(1);
+
+  if (repo.length === 0) {
+    return c.json({ error: "Repository not found" }, 404);
+  }
+
+  const repoData = repo[0];
+
+  let octokit: Octokit;
+  try {
+    octokit = await getOctokitForUser(userId);
+  } catch (err: any) {
+    return c.json({ error: err.message || "GitHub authentication required" }, 401);
+  }
+
+  // Parse owner/repo from fullName
+  const [owner, repoName] = repoData.fullName.split("/");
+  if (!owner || !repoName) {
+    return c.json({ error: "Invalid repository full name format" }, 400);
+  }
+
+  try {
+    const analysis = await analyzeRepository(
+      octokit,
+      owner,
+      repoName,
+      repoData.defaultBranch,
+      repoData.id,
+      repoData.fullName,
+      repoData.language,
+    );
+
+    return c.json({ analysis });
+  } catch (err: any) {
+    console.error("[repos] Analysis error:", err);
+    return c.json({ error: err.message || "Failed to analyze repository" }, 502);
+  }
 });
 
 // ============================================================

@@ -1,11 +1,14 @@
 import { Hono } from "hono";
 import { db } from "../db";
-import { pipelines, repositories } from "../db/schema";
+import { pipelines, repositories, users } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { authMiddleware } from "../middleware/auth";
 import { teamScopeMiddleware } from "../middleware/team-scope";
 import { createPipelineSchema, updatePipelineSchema } from "../../../shared/src/schemas";
+import { getGitHubToken } from "../lib/encryption";
+import { Octokit } from "octokit";
+import { analyzeRepository, generatePipelineFromAnalysis } from "../services/ai-generator";
 
 const pipelineRoutes = new Hono();
 
@@ -115,6 +118,99 @@ pipelineRoutes.post("/", async (c) => {
     .limit(1);
 
   return c.json(created[0], 201);
+});
+
+// ============================================================
+// Helper: Get Octokit instance for a user
+// ============================================================
+async function getOctokitForUser(userId: string): Promise<Octokit> {
+  const user = await db
+    .select({ githubToken: users.githubToken })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (user.length === 0 || !user[0].githubToken) {
+    throw new Error("User has no GitHub token. Please re-authenticate with GitHub.");
+  }
+
+  const token = getGitHubToken(user[0].githubToken);
+  return new Octokit({ auth: token });
+}
+
+// ============================================================
+// POST /api/teams/:teamId/pipelines/generate — AI generate pipeline
+// ============================================================
+pipelineRoutes.post("/generate", async (c) => {
+  const teamId = c.get("teamId") as string;
+  const userId = c.get("userId") as string;
+
+  const body = await c.req.json();
+  const { repositoryId } = body;
+
+  if (!repositoryId || typeof repositoryId !== "string") {
+    return c.json({ error: "repositoryId (UUID string) is required" }, 400);
+  }
+
+  // Get the repository
+  const repo = await db
+    .select()
+    .from(repositories)
+    .where(and(eq(repositories.id, repositoryId), eq(repositories.teamId, teamId)))
+    .limit(1);
+
+  if (repo.length === 0) {
+    return c.json({ error: "Repository not found or not in this team" }, 404);
+  }
+
+  const repoData = repo[0];
+
+  // Get Octokit
+  let octokit: Octokit;
+  try {
+    octokit = await getOctokitForUser(userId);
+  } catch (err: any) {
+    return c.json({ error: err.message || "GitHub authentication required" }, 401);
+  }
+
+  // Parse owner/repo
+  const [owner, repoName] = repoData.fullName.split("/");
+  if (!owner || !repoName) {
+    return c.json({ error: "Invalid repository full name format" }, 400);
+  }
+
+  try {
+    // Step 1: Analyze the repo
+    const analysis = await analyzeRepository(
+      octokit,
+      owner,
+      repoName,
+      repoData.defaultBranch,
+      repoData.id,
+      repoData.fullName,
+      repoData.language,
+    );
+
+    // Step 2: Generate pipeline from analysis
+    const generated = await generatePipelineFromAnalysis(analysis);
+
+    return c.json({
+      analysis: {
+        primaryLanguage: analysis.primaryLanguage,
+        languages: analysis.languages,
+        framework: analysis.framework,
+        buildTool: analysis.buildTool,
+        testFramework: analysis.testFramework,
+        deploymentHints: analysis.deploymentHints,
+        keyFiles: analysis.keyFiles,
+        existingCiConfigs: analysis.existingCiConfigs,
+      },
+      pipeline: generated,
+    });
+  } catch (err: any) {
+    console.error("[pipelines] AI generation error:", err);
+    return c.json({ error: err.message || "Failed to generate pipeline" }, 502);
+  }
 });
 
 // ============================================================
