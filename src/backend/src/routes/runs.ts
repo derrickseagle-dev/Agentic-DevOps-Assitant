@@ -126,7 +126,7 @@ runRoutes.post("/:pipelineId/runs", async (c) => {
     return c.json({ error: "Pipeline not found" }, 404);
   }
 
-  if (pipe[0].status !== "active") {
+  if (pipe[0].status === "archived") {
     return c.json({ error: "Pipeline must be active to trigger runs" }, 400);
   }
 
@@ -196,7 +196,7 @@ runRoutes.post("/:pipelineId/runs", async (c) => {
         ...created[0],
         stages: stages.map((s) => ({
           ...s,
-          stageConfig: JSON.parse(s.stageConfig as string),
+          stageConfig: s.stageConfig,
         })),
       },
     },
@@ -254,7 +254,7 @@ runRoutes.get("/:pipelineId/runs/:runId", async (c) => {
       ...run[0],
       stages: stages.map((s) => ({
         ...s,
-        stageConfig: JSON.parse(s.stageConfig as string),
+        stageConfig: s.stageConfig,
       })),
       checkpointApprovals: approvals,
       deployments: runDeployments,
