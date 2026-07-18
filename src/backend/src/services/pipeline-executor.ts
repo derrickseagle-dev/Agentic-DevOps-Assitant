@@ -137,7 +137,7 @@ export async function executeStage(runStageId: string): Promise<void> {
   if (stageRow.length === 0) return;
 
   const stage = stageRow[0];
-  const stageConfig: StageConfig = JSON.parse(stage.stageConfig as string);
+  const stageConfig = stage.stageConfig as StageConfig;
   const now = new Date();
   const timestamp = now.toISOString().replace("T", " ").substring(0, 19);
 

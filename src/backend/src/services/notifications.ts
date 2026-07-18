@@ -57,7 +57,7 @@ export async function sendCheckpointNotification(
     if (approvalRows.length === 0) return;
 
     const data = approvalRows[0];
-    const stageConfig = JSON.parse(data.stageConfig as string);
+    const stageConfig = data.stageConfig as any;
     const approvers: string[] = stageConfig.approvers || [];
 
     // Get the pipeline's team_id for notification scoping
