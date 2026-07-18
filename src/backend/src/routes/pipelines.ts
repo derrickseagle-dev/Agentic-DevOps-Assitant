@@ -79,7 +79,7 @@ pipelineRoutes.post("/", async (c) => {
     return c.json({ error: "Repository not found or not in this team" }, 404);
   }
 
-  const now = new Date().toISOString();
+  const now = new Date();
   const pipelineId = uuidv4();
 
   await db.insert(pipelines).values({
@@ -275,7 +275,7 @@ pipelineRoutes.patch("/:pipelineId", async (c) => {
   }
 
   const updateData: Record<string, any> = {
-    updatedAt: new Date().toISOString(),
+    updatedAt: new Date(),
   };
 
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name;

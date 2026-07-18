@@ -154,7 +154,7 @@ runRoutes.post("/:pipelineId/runs", async (c) => {
     );
   }
 
-  const now = new Date().toISOString();
+  const now = new Date();
   const runId = uuidv4();
 
   // Create the pipeline run
