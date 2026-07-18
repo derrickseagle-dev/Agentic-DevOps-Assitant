@@ -10,6 +10,7 @@ import Repositories from "./routes/Repositories";
 import Settings from "./routes/Settings";
 import Login from "./routes/Login";
 import AuthCallback from "./routes/AuthCallback";
+import Onboarding from "./routes/Onboarding";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -30,21 +31,39 @@ export default function App() {
       <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route
+        path="/onboarding"
+        element={
+          user ? (
+            (user.teams && user.teams.length > 0) ? (
+              <Navigate to="/" />
+            ) : (
+              <Onboarding />
+            )
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
+      <Route
         path="/*"
         element={
           user ? (
-            <Shell>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/pipelines" element={<Pipelines />} />
-                <Route path="/pipelines/new" element={<CreatePipeline />} />
-                <Route path="/pipelines/:pipelineId" element={<PipelineDetail />} />
-                <Route path="/pipelines/:pipelineId/runs/:runId" element={<RunDetail />} />
-                <Route path="/repositories" element={<Repositories />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="*" element={<Navigate to="/" />} />
-              </Routes>
-            </Shell>
+            (user.teams && user.teams.length > 0) ? (
+              <Shell>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/pipelines" element={<Pipelines />} />
+                  <Route path="/pipelines/new" element={<CreatePipeline />} />
+                  <Route path="/pipelines/:pipelineId" element={<PipelineDetail />} />
+                  <Route path="/pipelines/:pipelineId/runs/:runId" element={<RunDetail />} />
+                  <Route path="/repositories" element={<Repositories />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+              </Shell>
+            ) : (
+              <Navigate to="/onboarding" />
+            )
           ) : (
             <Navigate to="/login" />
           )
