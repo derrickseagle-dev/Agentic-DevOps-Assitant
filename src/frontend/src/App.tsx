@@ -3,6 +3,9 @@ import { useAuth } from "./hooks/useAuth";
 import { Shell } from "./components/layout/Shell";
 import Dashboard from "./routes/Dashboard";
 import Pipelines from "./routes/Pipelines";
+import PipelineDetail from "./routes/PipelineDetail";
+import CreatePipeline from "./routes/CreatePipeline";
+import Repositories from "./routes/Repositories";
 import Settings from "./routes/Settings";
 import Login from "./routes/Login";
 import AuthCallback from "./routes/AuthCallback";
@@ -33,6 +36,9 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/pipelines" element={<Pipelines />} />
+                <Route path="/pipelines/new" element={<CreatePipeline />} />
+                <Route path="/pipelines/:pipelineId" element={<PipelineDetail />} />
+                <Route path="/repositories" element={<Repositories />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>

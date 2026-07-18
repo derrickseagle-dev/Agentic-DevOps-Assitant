@@ -4,6 +4,7 @@ import { LayoutDashboard, GitBranch, Settings, Activity } from "lucide-react";
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/pipelines", icon: GitBranch, label: "Pipelines" },
+  { to: "/repositories", icon: GitBranch, label: "Repositories" },
   { to: "/settings", icon: Settings, label: "Settings" },
 ];
 
