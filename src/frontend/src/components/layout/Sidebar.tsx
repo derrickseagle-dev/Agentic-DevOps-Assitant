@@ -1,11 +1,10 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, GitBranch, Settings, Activity, Play } from "lucide-react";
+import { LayoutDashboard, Workflow, FolderGit2, Settings, Activity, PlayCircle } from "lucide-react";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/pipelines", icon: GitBranch, label: "Pipelines" },
-  { to: "/pipelines", icon: Play, label: "Runs" },
-  { to: "/repositories", icon: GitBranch, label: "Repositories" },
+  { to: "/pipelines", icon: Workflow, label: "Pipelines" },
+  { to: "/repositories", icon: FolderGit2, label: "Repositories" },
   { to: "/settings", icon: Settings, label: "Settings" },
 ];
 
@@ -13,7 +12,9 @@ export function Sidebar() {
   return (
     <aside className="flex w-60 flex-col border-r border-[#252540] bg-[#131320]">
       <div className="flex h-14 items-center gap-3 border-b border-[#252540] px-4">
-        <Activity className="h-6 w-6 text-primary" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+          <Activity className="h-5 w-5 text-primary" />
+        </div>
         <span className="text-lg font-semibold tracking-tight">PipelineForge</span>
       </div>
 

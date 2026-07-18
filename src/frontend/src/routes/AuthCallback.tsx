@@ -1,7 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { api } from "../lib/api";
+
+// Module-level guard: OAuth codes can only be used once.
+// React StrictMode double-invokes useEffect, which would fire the
+// exchange twice — the second call consumes the already-used code
+// and GitHub returns "bad_verification_code".
+let exchangeInitiated = false;
 
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
@@ -10,14 +16,17 @@ export default function AuthCallback() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (exchangeInitiated) return;
+    exchangeInitiated = true;
+
     const code = searchParams.get("code");
     if (!code) {
       setError("Missing authorization code from GitHub.");
       return;
     }
 
-    // Call backend callback endpoint
-    fetch(`/auth/github/callback?code=${code}&state=${searchParams.get("state") || ""}`)
+    // Call backend callback endpoint (URL-encode params to handle special chars)
+    fetch(`/auth/github/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(searchParams.get("state") || "")}`)
       .then(async (res) => {
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));

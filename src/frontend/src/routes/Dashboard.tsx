@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
-import { Activity, GitBranch, Clock, CheckCircle2, Rocket } from "lucide-react";
+import { Activity, PlayCircle, Clock, CheckCircle2, Rocket } from "lucide-react";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -24,7 +24,7 @@ export default function Dashboard() {
     {
       label: "Runs (7 days)",
       value: data?.recentRuns ?? "-",
-      icon: GitBranch,
+      icon: PlayCircle,
       color: "text-blue-400",
       bg: "bg-blue-400/10",
     },
@@ -69,7 +69,7 @@ export default function Dashboard() {
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="rounded-xl border border-[#252540] bg-[#131320] p-5"
+              className="card-lift rounded-xl border border-[#252540] bg-[#131320] p-5"
             >
               <div className="flex items-center gap-3">
                 <div className={`rounded-lg ${stat.bg} p-2`}>
@@ -93,7 +93,7 @@ export default function Dashboard() {
 
       {/* Quick links / recent activity */}
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-[#252540] bg-[#131320] p-6">
+        <div className="card-lift rounded-xl border border-[#252540] bg-[#131320] p-6">
           <h2 className="mb-4 text-lg font-semibold text-[#e4e4f0]">Quick Overview</h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between rounded-lg bg-[#1a1a2e] p-3">
@@ -123,7 +123,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[#252540] bg-[#131320] p-6">
+        <div className="card-lift rounded-xl border border-[#252540] bg-[#131320] p-6">
           <h2 className="mb-4 text-lg font-semibold text-[#e4e4f0]">Getting Started</h2>
           <div className="space-y-3 text-sm text-[#8888a0]">
             <p>

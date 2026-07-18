@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
-import { GitBranch, Plus, Trash2, ExternalLink, Lock, Globe, RefreshCw, Search } from "lucide-react";
+import { GitBranch, Plus, Trash2, ExternalLink, Lock, Globe, RefreshCw, Search, FolderGit2 } from "lucide-react";
 import { useState } from "react";
 
 export default function Repositories() {
@@ -21,7 +21,7 @@ export default function Repositories() {
   });
 
   // Available repos from GitHub
-  const { data: available, isLoading: loadingAvailable, refetch: refetchAvailable } = useQuery({
+  const { data: available, isLoading: loadingAvailable, error: availableError, refetch: refetchAvailable } = useQuery({
     queryKey: ["repositories-available", teamId],
     queryFn: () => api.listAvailableRepos(teamId!),
     enabled: !!teamId && showConnect,
@@ -43,7 +43,10 @@ export default function Repositories() {
       setConnectError(null);
     },
     onError: (err: any) => {
-      setConnectError(err.message || "Failed to connect repository");
+      const msg = err?.details?.fieldErrors 
+        ? Object.values(err.details.fieldErrors).flat().join(", ")
+        : err?.message || "Failed to connect repository";
+      setConnectError(msg);
     },
   });
 
@@ -94,7 +97,9 @@ export default function Repositories() {
       ) : connectedRepos.length === 0 ? (
         <div className="rounded-xl border border-[#252540] bg-[#131320]">
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <GitBranch className="mb-4 h-12 w-12 text-[#333355]" />
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1a1a2e]">
+              <FolderGit2 className="h-7 w-7 text-[#444466]" />
+            </div>
             <h2 className="text-lg font-semibold text-[#8888a0]">No repositories connected</h2>
             <p className="mt-2 max-w-md text-sm text-[#666680]">
               Connect a GitHub repository to start building pipelines. You'll be able to
@@ -107,7 +112,7 @@ export default function Repositories() {
           {connectedRepos.map((repo: any) => (
             <div
               key={repo.id}
-              className="flex items-center justify-between rounded-xl border border-[#252540] bg-[#131320] p-5"
+              className="card-lift flex items-center justify-between rounded-xl border border-[#252540] bg-[#131320] p-5"
             >
               <div className="flex items-center gap-4 min-w-0">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1a1a2e]">
@@ -116,16 +121,14 @@ export default function Repositories() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="font-medium text-[#e4e4f0]">{repo.name}</h3>
-                    <span className="text-sm text-[#666680]">{repo.fullName}</span>
+                    {repo.language && (
+                      <span className="lang-badge">{repo.language}</span>
+                    )}
                   </div>
                   <div className="mt-0.5 flex items-center gap-3 text-xs text-[#666680]">
+                    <span className="truncate max-w-[200px]">{repo.fullName}</span>
+                    <span>•</span>
                     <span>Default: {repo.defaultBranch}</span>
-                    {repo.language && (
-                      <>
-                        <span>•</span>
-                        <span>{repo.language}</span>
-                      </>
-                    )}
                   </div>
                 </div>
               </div>
@@ -185,7 +188,20 @@ export default function Repositories() {
             </div>
           )}
 
-          {loadingAvailable ? (
+          {availableError ? (
+            <div className="rounded-lg border border-red-400/20 bg-red-400/5 p-4 text-center">
+              <p className="text-sm text-red-400">
+                {(availableError as any)?.message || "Failed to load repositories from GitHub."}
+              </p>
+              <button
+                onClick={() => refetchAvailable()}
+                className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+              >
+                <RefreshCw className="h-3 w-3" />
+                Try again
+              </button>
+            </div>
+          ) : loadingAvailable ? (
             <div className="space-y-2">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="h-14 animate-pulse rounded-lg bg-[#0a0a0f]" />

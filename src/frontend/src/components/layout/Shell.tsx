@@ -8,7 +8,9 @@ export function Shell({ children }: { children: ReactNode }) {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto bg-[#0a0a0f] p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-[#0a0a0f] bg-dots bg-mesh p-6">
+          {children}
+        </main>
       </div>
     </div>
   );
