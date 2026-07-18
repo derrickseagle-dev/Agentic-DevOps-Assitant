@@ -7,12 +7,16 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  Loader2,
+  Circle,
+  MinusCircle,
   Play,
   AlertTriangle,
   StopCircle,
   SkipForward,
   ThumbsUp,
   ThumbsDown,
+  ChevronDown,
   ChevronRight,
   Terminal,
   ExternalLink,
@@ -69,6 +73,19 @@ export default function RunDetail() {
   const [rejectComment, setRejectComment] = useState("");
   const [showApprove, setShowApprove] = useState(false);
   const [showReject, setShowReject] = useState(false);
+  const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
+
+  const toggleLog = (stageId: string) => {
+    setExpandedLogs((prev) => {
+      const next = new Set(prev);
+      if (next.has(stageId)) {
+        next.delete(stageId);
+      } else {
+        next.add(stageId);
+      }
+      return next;
+    });
+  };
 
   const isActive = (status: string) =>
     status === "running" || status === "awaiting_approval" || status === "pending";
@@ -114,22 +131,23 @@ export default function RunDetail() {
     const cls = size === "lg" ? "h-6 w-6" : "h-4 w-4";
     switch (status) {
       case "running":
-        return <Play className={`${cls} text-blue-400 animate-pulse`} />;
+        return <Loader2 className={`${cls} text-blue-400 animate-spin`} />;
       case "success":
+      case "passed":
       case "approved":
         return <CheckCircle2 className={`${cls} text-emerald-400`} />;
       case "failed":
       case "rejected":
         return <XCircle className={`${cls} text-red-400`} />;
       case "awaiting_approval":
-        return <AlertTriangle className={`${cls} text-amber-400`} />;
+        return <Clock className={`${cls} text-amber-400 animate-pulse`} />;
       case "cancelled":
         return <StopCircle className={`${cls} text-[#666680]`} />;
       case "skipped":
-        return <SkipForward className={`${cls} text-[#666680]`} />;
+        return <MinusCircle className={`${cls} text-[#666680]`} />;
       case "pending":
       default:
-        return <Clock className={`${cls} text-[#666680]`} />;
+        return <Circle className={`${cls} text-[#666680]`} />;
     }
   };
 
@@ -138,6 +156,7 @@ export default function RunDetail() {
       case "running":
         return "border-blue-400/20 bg-blue-400/10 text-blue-400";
       case "success":
+      case "passed":
         return "border-emerald-400/20 bg-emerald-400/10 text-emerald-400";
       case "failed":
       case "rejected":
@@ -179,19 +198,72 @@ export default function RunDetail() {
     return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
   };
 
+  // ── Loading skeleton ──
   if (isLoading) {
     return (
       <div className="mx-auto max-w-4xl">
-        <div className="h-96 animate-pulse rounded-xl bg-[#131320]" />
+        {/* Back nav skeleton */}
+        <div className="mb-6 h-4 w-32 animate-pulse rounded bg-[#1a1a2e]" />
+
+        {/* Header skeleton */}
+        <div className="mb-8">
+          <div className="flex items-start justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-40 animate-pulse rounded bg-[#1a1a2e]" />
+                <div className="h-6 w-20 animate-pulse rounded-full bg-[#1a1a2e]" />
+              </div>
+              <div className="h-4 w-64 animate-pulse rounded bg-[#1a1a2e]" />
+              <div className="h-3 w-48 animate-pulse rounded bg-[#1a1a2e]" />
+            </div>
+            <div className="h-9 w-28 animate-pulse rounded-lg bg-[#1a1a2e]" />
+          </div>
+        </div>
+
+        {/* Stage timeline skeleton */}
+        <div className="rounded-xl border border-[#252540] bg-[#131320] p-6">
+          <div className="mb-6 h-6 w-36 animate-pulse rounded bg-[#1a1a2e]" />
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex gap-4">
+                <div className="h-10 w-10 animate-pulse rounded-full bg-[#1a1a2e]" />
+                <div className="flex-1 rounded-lg border border-[#252540] bg-[#1a1a2e] p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-32 animate-pulse rounded bg-[#252540]" />
+                        <div className="h-4 w-16 animate-pulse rounded-full bg-[#252540]" />
+                      </div>
+                      <div className="h-3 w-48 animate-pulse rounded bg-[#252540]" />
+                    </div>
+                    <div className="h-3 w-12 animate-pulse rounded bg-[#252540]" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
+  // ── Error / not found ──
   if (error || !run) {
     return (
       <div className="mx-auto max-w-4xl">
         <div className="rounded-xl border border-red-400/20 bg-red-400/5 p-6 text-center">
-          <p className="text-red-400">Run not found</p>
+          <XCircle className="mx-auto h-10 w-10 text-red-400/60 mb-3" />
+          <p className="text-red-400 font-medium">Run not found</p>
+          <p className="mt-1 text-sm text-[#8888a0]">
+            The pipeline run you're looking for doesn't exist or you don't have access to it.
+          </p>
+          <Link
+            to={`/pipelines/${pipelineId}`}
+            className="mt-4 inline-flex items-center gap-2 text-sm text-primary hover:underline"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Pipeline
+          </Link>
         </div>
       </div>
     );
@@ -328,11 +400,17 @@ export default function RunDetail() {
       </div>
 
       {/* Stage Timeline */}
-      <div className="rounded-xl border border-[#252540] bg-[#131320] p-6">
+      <div className="rounded-xl border border-[#252540] bg-[#131320] bg-mesh p-6">
         <h2 className="mb-6 text-lg font-semibold text-[#e4e4f0]">Stage Timeline</h2>
 
         {stages.length === 0 ? (
-          <p className="text-sm text-[#666680] text-center py-6">No stages found.</p>
+          <div className="text-center py-8">
+            <Circle className="mx-auto h-10 w-10 text-[#666680]/50 mb-3" />
+            <p className="text-sm text-[#666680]">No stages found for this run.</p>
+            <p className="mt-1 text-xs text-[#666680]/60">
+              Stages will appear here once the pipeline begins execution.
+            </p>
+          </div>
         ) : (
           <div className="relative">
             {/* Vertical line */}
@@ -342,6 +420,8 @@ export default function RunDetail() {
               {stages.map((stage, index) => {
                 const isLast = index === stages.length - 1;
                 const isCurrent = stage.order === run.currentStageOrder;
+                const isLogExpanded = expandedLogs.has(stage.id);
+                const hasLog = !!stage.logOutput;
 
                 return (
                   <div key={stage.id} className="relative pb-4 last:pb-0">
@@ -352,16 +432,38 @@ export default function RunDetail() {
                       </div>
 
                       {/* Stage card */}
-                      <div className={`flex-1 rounded-lg border ${isCurrent && isActive(stage.status) ? 'border-primary/30 bg-primary/5' : 'border-[#252540] bg-[#1a1a2e]'} p-4`}>
+                      <div
+                        className={`flex-1 rounded-lg border card-lift p-4 ${
+                          isCurrent && isActive(stage.status)
+                            ? "border-primary/30 bg-primary/5"
+                            : "border-[#252540] bg-[#1a1a2e]"
+                        } ${hasLog ? "cursor-pointer" : ""}`}
+                        onClick={() => hasLog && toggleLog(stage.id)}
+                      >
                         <div className="flex items-start justify-between">
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-[#e4e4f0]">
+                              <span className={`text-sm font-medium ${
+                                stage.status === "running" ? "text-blue-400" :
+                                stage.status === "success" || stage.status === "passed" ? "text-emerald-400" :
+                                stage.status === "failed" ? "text-red-400" :
+                                "text-[#e4e4f0]"
+                              }`}>
                                 {stage.stageConfig.name}
                               </span>
                               <span className="rounded-full bg-[#252540] px-1.5 py-0.5 text-[10px] font-medium text-[#8888a0] uppercase">
                                 {getStageTypeLabel(stage.stageConfig.type)}
                               </span>
+                              {hasLog && (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-[#666680]">
+                                  {isLogExpanded ? (
+                                    <ChevronDown className="h-3 w-3" />
+                                  ) : (
+                                    <ChevronRight className="h-3 w-3" />
+                                  )}
+                                  Logs
+                                </span>
+                              )}
                             </div>
 
                             {stage.stageConfig.type === "script" && stage.stageConfig.command && (
@@ -391,10 +493,26 @@ export default function RunDetail() {
                           </div>
                         </div>
 
-                        {/* Log output */}
-                        {stage.logOutput && (
-                          <div className="mt-3 rounded-md bg-[#0a0a0f] p-3 font-mono text-xs text-[#8888a0] max-h-40 overflow-y-auto whitespace-pre-wrap">
-                            {stage.logOutput}
+                        {/* Collapsible log output */}
+                        {hasLog && isLogExpanded && (
+                          <div
+                            className="mt-3 rounded-md bg-[#0a0a0f] border border-[#252540] overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex items-center justify-between border-b border-[#252540] px-3 py-1.5">
+                              <span className="text-[10px] font-medium text-[#666680] uppercase tracking-wider">
+                                Log Output
+                              </span>
+                              <button
+                                onClick={() => toggleLog(stage.id)}
+                                className="text-[10px] text-[#666680] hover:text-[#8888a0] transition-colors"
+                              >
+                                Hide
+                              </button>
+                            </div>
+                            <pre className="p-3 font-mono text-xs text-[#a0a0b8] max-h-60 overflow-y-auto whitespace-pre-wrap leading-relaxed">
+                              {stage.logOutput}
+                            </pre>
                           </div>
                         )}
 
@@ -406,7 +524,7 @@ export default function RunDetail() {
                           </div>
                         )}
 
-                        {stage.stageConfig.type === "checkpoint" && stage.status === "success" && (
+                        {stage.stageConfig.type === "checkpoint" && (stage.status === "success" || stage.status === "passed") && (
                           <div className="mt-3 flex items-center gap-2 text-xs text-emerald-400">
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             Checkpoint approved
@@ -424,11 +542,11 @@ export default function RunDetail() {
 
       {/* Deployments */}
       {run.deployments && run.deployments.length > 0 && (
-        <div className="mt-6 rounded-xl border border-[#252540] bg-[#131320] p-6">
+        <div className="mt-6 rounded-xl border border-[#252540] bg-[#131320] bg-mesh p-6">
           <h2 className="mb-4 text-lg font-semibold text-[#e4e4f0]">Deployments</h2>
           <div className="space-y-2">
             {run.deployments.map((deploy: any) => (
-              <div key={deploy.id} className="flex items-center justify-between rounded-lg border border-[#252540] bg-[#1a1a2e] p-3">
+              <div key={deploy.id} className="flex items-center justify-between rounded-lg border border-[#252540] bg-[#1a1a2e] card-lift p-3">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                   <div>
