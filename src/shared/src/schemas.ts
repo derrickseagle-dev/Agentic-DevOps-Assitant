@@ -80,6 +80,8 @@ export const connectRepositorySchema = z.object({
   githubRepoId: z.number(),
   name: z.string().min(1),
   fullName: z.string().min(1),
+  url: z.string().url().optional(),
+  isPrivate: z.boolean().optional(),
   defaultBranch: z.string().default("main"),
   language: z.string().optional(),
 });

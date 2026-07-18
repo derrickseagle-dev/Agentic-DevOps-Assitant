@@ -64,4 +64,35 @@ export const api = {
 
   // Dashboard
   getDashboard: (teamId: string) => request<any>(`/api/teams/${teamId}/dashboard`),
+
+  // Repositories
+  listRepositories: (teamId: string) =>
+    request<any>(`/api/teams/${teamId}/repositories`),
+  listAvailableRepos: (teamId: string, page = 1) =>
+    request<any>(`/api/teams/${teamId}/repositories/available?page=${page}`),
+  connectRepository: (teamId: string, data: {
+    githubRepoId: number;
+    name: string;
+    fullName: string;
+    url?: string;
+    isPrivate?: boolean;
+    defaultBranch?: string;
+    language?: string;
+  }) => request<any>(`/api/teams/${teamId}/repositories`, { method: "POST", body: data }),
+  disconnectRepository: (teamId: string, repoId: string) =>
+    request<any>(`/api/teams/${teamId}/repositories/${repoId}`, { method: "DELETE" }),
+
+  // Pipelines
+  listPipelines: (teamId: string, repoId?: string) => {
+    const query = repoId ? `?repoId=${repoId}` : "";
+    return request<any>(`/api/teams/${teamId}/pipelines${query}`);
+  },
+  createPipeline: (teamId: string, data: any) =>
+    request<any>(`/api/teams/${teamId}/pipelines`, { method: "POST", body: data }),
+  getPipeline: (teamId: string, pipelineId: string) =>
+    request<any>(`/api/teams/${teamId}/pipelines/${pipelineId}`),
+  updatePipeline: (teamId: string, pipelineId: string, data: any) =>
+    request<any>(`/api/teams/${teamId}/pipelines/${pipelineId}`, { method: "PATCH", body: data }),
+  deletePipeline: (teamId: string, pipelineId: string) =>
+    request<any>(`/api/teams/${teamId}/pipelines/${pipelineId}`, { method: "DELETE" }),
 };

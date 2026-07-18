@@ -3,6 +3,8 @@ import { cors } from "hono/cors";
 import authRoutes from "./routes/auth";
 import teamRoutes from "./routes/teams";
 import dashboardRoutes from "./routes/dashboard";
+import repositoryRoutes from "./routes/repositories";
+import pipelineRoutes from "./routes/pipelines";
 
 // Run migrations on startup
 import "./db/migrate";
@@ -25,6 +27,12 @@ app.route("/auth", authRoutes);
 
 // Dashboard routes first (more specific paths before generic /:teamId)
 app.route("/api/teams", dashboardRoutes);
+
+// Repository routes (with /:teamId/repositories sub-routes)
+app.route("/api/teams/:teamId/repositories", repositoryRoutes);
+
+// Pipeline routes (with /:teamId/pipelines sub-routes)
+app.route("/api/teams/:teamId/pipelines", pipelineRoutes);
 
 // API routes (most require auth)
 app.route("/api/teams", teamRoutes);
