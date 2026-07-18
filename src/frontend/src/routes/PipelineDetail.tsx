@@ -12,8 +12,12 @@ import {
   Trash2,
   GripVertical,
   ChevronRight,
+  GitGraph,
+  Code2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import PipelineDAG from "../components/pipeline/PipelineDAG";
+import type { DAGStage } from "../components/pipeline/PipelineDAG";
 
 interface Stage {
   id: string;
@@ -39,6 +43,7 @@ export default function PipelineDetail() {
   const [editStages, setEditStages] = useState<Stage[]>([]);
   const [editJsonText, setEditJsonText] = useState("");
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"dag" | "form">("dag");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["pipeline", teamId, pipelineId],
@@ -251,13 +256,41 @@ export default function PipelineDetail() {
 
       {/* Stages */}
       <div className="rounded-xl border border-[#252540] bg-[#131320] p-6">
-        <h2 className="mb-4 text-lg font-semibold text-[#e4e4f0]">
-          Pipeline Stages
-        </h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-[#e4e4f0]">
+            Pipeline Stages
+          </h2>
+          {!isEditing && stages.length > 0 && (
+            <div className="flex rounded-lg border border-[#333355] bg-[#0a0a0f] p-0.5">
+              <button
+                onClick={() => setViewMode("dag")}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === "dag"
+                    ? "bg-primary/20 text-primary"
+                    : "text-[#8888a0] hover:text-[#e4e4f0]"
+                }`}
+              >
+                <GitGraph className="h-3.5 w-3.5" />
+                DAG
+              </button>
+              <button
+                onClick={() => setViewMode("form")}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === "form"
+                    ? "bg-primary/20 text-primary"
+                    : "text-[#8888a0] hover:text-[#e4e4f0]"
+                }`}
+              >
+                <Code2 className="h-3.5 w-3.5" />
+                JSON
+              </button>
+            </div>
+          )}
+        </div>
 
         {isEditing ? (
           <div className="space-y-4">
-            {/* JSON toggle */}
+            {/* JSON toggle in edit mode */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setEditJsonText(JSON.stringify({ stages: editStages }, null, 2))}
@@ -382,76 +415,26 @@ export default function PipelineDetail() {
             </button>
           </div>
         ) : (
-          /* Read-only stage view */
-          <div className="space-y-3">
+          /* Read-only DAG or JSON view */
+          <div>
             {stages.length === 0 ? (
               <p className="text-sm text-[#666680] text-center py-6">
                 No stages defined. Click Edit to add stages.
               </p>
+            ) : viewMode === "dag" ? (
+              <PipelineDAG
+                stages={stages as DAGStage[]}
+                onStagesChange={() => {}}
+                readOnly
+              />
             ) : (
-              stages.map((stage: Stage, index: number) => (
-                <div
-                  key={stage.id}
-                  className={`rounded-lg border p-4 ${getStageTypeColor(stage.type)}`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#1a1a2e] text-xs font-medium text-[#8888a0]">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-[#e4e4f0]">{stage.name}</h3>
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          stage.type === "checkpoint"
-                            ? "bg-amber-400/10 text-amber-400"
-                            : stage.type === "deploy"
-                              ? "bg-blue-400/10 text-blue-400"
-                              : "bg-[#1a1a2e] text-[#8888a0]"
-                        }`}>
-                          {getStageTypeLabel(stage.type)}
-                        </span>
-                      </div>
-                      {stage.command && (
-                        <code className="mt-1 block text-xs text-[#8888a0] font-mono truncate">
-                          {stage.command}
-                        </code>
-                      )}
-                      {stage.image && (
-                        <span className="mt-1 inline-block text-xs text-[#666680]">
-                          Image: {stage.image}
-                        </span>
-                      )}
-                      {stage.environment && (
-                        <span className="mt-1 inline-block text-xs text-[#666680]">
-                          Env: {stage.environment}
-                        </span>
-                      )}
-                      {stage.message && (
-                        <p className="mt-1 text-xs text-[#8888a0] italic">{stage.message}</p>
-                      )}
-                    </div>
-                    {index < stages.length - 1 && (
-                      <div className="flex items-center text-[#333355]">
-                        <ChevronRight className="h-5 w-5" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
+              <pre className="overflow-x-auto rounded-lg bg-[#0a0a0f] p-4 font-mono text-xs text-[#8888a0] max-h-96 overflow-y-auto">
+                {JSON.stringify({ stages }, null, 2)}
+              </pre>
             )}
           </div>
         )}
       </div>
-
-      {/* Raw Config (read-only) */}
-      {!isEditing && stages.length > 0 && (
-        <div className="mt-6 rounded-xl border border-[#252540] bg-[#131320] p-6">
-          <h3 className="mb-3 text-sm font-semibold text-[#8888a0]">Raw Config</h3>
-          <pre className="overflow-x-auto rounded-lg bg-[#0a0a0f] p-4 font-mono text-xs text-[#8888a0]">
-            {JSON.stringify({ stages }, null, 2)}
-          </pre>
-        </div>
-      )}
     </div>
   );
 }
