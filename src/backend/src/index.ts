@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import authRoutes from "./routes/auth";
+import siteRoutes from "./routes/site";
 import teamRoutes from "./routes/teams";
 import dashboardRoutes from "./routes/dashboard";
 import repositoryRoutes from "./routes/repositories";
@@ -27,6 +28,9 @@ app.get("/api/health", (c) => c.json({ status: "ok", timestamp: new Date().toISO
 
 // Auth routes (unauthenticated)
 app.route("/auth", authRoutes);
+
+// Site routes (public — landing page, beta signup, etc.)
+app.route("/api", siteRoutes);
 
 // Dashboard routes first (more specific paths before generic /:teamId)
 app.route("/api/teams", dashboardRoutes);
