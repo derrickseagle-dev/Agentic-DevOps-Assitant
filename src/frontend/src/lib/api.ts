@@ -95,4 +95,10 @@ export const api = {
     request<any>(`/api/teams/${teamId}/pipelines/${pipelineId}`, { method: "PATCH", body: data }),
   deletePipeline: (teamId: string, pipelineId: string) =>
     request<any>(`/api/teams/${teamId}/pipelines/${pipelineId}`, { method: "DELETE" }),
+  generatePipeline: (teamId: string, repositoryId: string) =>
+    request<any>(`/api/teams/${teamId}/pipelines/generate`, { method: "POST", body: { repositoryId } }),
+
+  // Repositories
+  analyzeRepo: (teamId: string, repoId: string) =>
+    request<any>(`/api/teams/${teamId}/repositories/${repoId}/analyze`, { method: "POST" }),
 };
