@@ -123,4 +123,58 @@ dashboardRoutes.get("/:teamId/dashboard", async (c) => {
   });
 });
 
+// GET /api/teams/:teamId/dashboard/activity
+dashboardRoutes.get("/:teamId/dashboard/activity", async (c) => {
+  const teamId = c.get("teamId") as string;
+
+  // ── Recent Runs (5 most recent across all team pipelines) ──
+  const recentRunsRows = await db
+    .select({
+      id: pipelineRuns.id,
+      status: pipelineRuns.status,
+      branch: pipelineRuns.branch,
+      commitSha: pipelineRuns.commitSha,
+      commitMessage: pipelineRuns.commitMessage,
+      createdAt: pipelineRuns.createdAt,
+      pipelineId: pipelines.id,
+      pipelineName: pipelines.name,
+    })
+    .from(pipelineRuns)
+    .innerJoin(pipelines, eq(pipelineRuns.pipelineId, pipelines.id))
+    .where(
+      and(
+        sql`${pipelines.teamId} = ${teamId}`
+      )
+    )
+    .orderBy(sql`${pipelineRuns.createdAt} DESC`)
+    .limit(5);
+
+  // ── Recent Deployments (5 most recent) ──
+  const recentDeploymentsRows = await db
+    .select({
+      id: deployments.id,
+      status: deployments.status,
+      environment: deployments.environment,
+      deployUrl: deployments.deployUrl,
+      deployedAt: deployments.deployedAt,
+      repositoryId: repositories.id,
+      repositoryName: repositories.name,
+      repositoryFullName: repositories.fullName,
+    })
+    .from(deployments)
+    .innerJoin(repositories, eq(deployments.repositoryId, repositories.id))
+    .where(
+      and(
+        sql`${repositories.teamId} = ${teamId}`
+      )
+    )
+    .orderBy(sql`${deployments.deployedAt} DESC`)
+    .limit(5);
+
+  return c.json({
+    recentRuns: recentRunsRows,
+    recentDeployments: recentDeploymentsRows,
+  });
+});
+
 export default dashboardRoutes;
