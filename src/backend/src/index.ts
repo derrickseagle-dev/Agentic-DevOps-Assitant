@@ -5,6 +5,7 @@ import teamRoutes from "./routes/teams";
 import dashboardRoutes from "./routes/dashboard";
 import repositoryRoutes from "./routes/repositories";
 import pipelineRoutes from "./routes/pipelines";
+import runRoutes from "./routes/runs";
 
 // Run migrations on startup
 import "./db/migrate";
@@ -31,7 +32,9 @@ app.route("/api/teams", dashboardRoutes);
 // Repository routes (with /:teamId/repositories sub-routes)
 app.route("/api/teams/:teamId/repositories", repositoryRoutes);
 
-// Pipeline routes (with /:teamId/pipelines sub-routes)
+// Pipeline routes (with /:teamId/pipelines sub-routes — must mount runs BEFORE pipelines
+// since runs has /:pipelineId/runs sub-routes and pipelines has /:pipelineId catch-all)
+app.route("/api/teams/:teamId/pipelines", runRoutes);
 app.route("/api/teams/:teamId/pipelines", pipelineRoutes);
 
 // API routes (most require auth)

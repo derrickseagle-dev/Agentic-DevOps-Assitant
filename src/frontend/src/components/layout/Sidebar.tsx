@@ -1,9 +1,10 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, GitBranch, Settings, Activity } from "lucide-react";
+import { LayoutDashboard, GitBranch, Settings, Activity, Play } from "lucide-react";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/pipelines", icon: GitBranch, label: "Pipelines" },
+  { to: "/pipelines", icon: Play, label: "Runs" },
   { to: "/repositories", icon: GitBranch, label: "Repositories" },
   { to: "/settings", icon: Settings, label: "Settings" },
 ];

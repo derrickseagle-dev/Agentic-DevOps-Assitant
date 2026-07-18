@@ -5,6 +5,7 @@ import Dashboard from "./routes/Dashboard";
 import Pipelines from "./routes/Pipelines";
 import PipelineDetail from "./routes/PipelineDetail";
 import CreatePipeline from "./routes/CreatePipeline";
+import RunDetail from "./routes/RunDetail";
 import Repositories from "./routes/Repositories";
 import Settings from "./routes/Settings";
 import Login from "./routes/Login";
@@ -38,6 +39,7 @@ export default function App() {
                 <Route path="/pipelines" element={<Pipelines />} />
                 <Route path="/pipelines/new" element={<CreatePipeline />} />
                 <Route path="/pipelines/:pipelineId" element={<PipelineDetail />} />
+                <Route path="/pipelines/:pipelineId/runs/:runId" element={<RunDetail />} />
                 <Route path="/repositories" element={<Repositories />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="/" />} />

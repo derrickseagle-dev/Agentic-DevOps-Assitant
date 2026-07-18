@@ -14,6 +14,12 @@ import {
   ChevronRight,
   GitGraph,
   Code2,
+  History,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  AlertTriangle,
+  StopCircle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import PipelineDAG from "../components/pipeline/PipelineDAG";
@@ -44,10 +50,20 @@ export default function PipelineDetail() {
   const [editJsonText, setEditJsonText] = useState("");
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"dag" | "form">("dag");
+  const [showTriggerDialog, setShowTriggerDialog] = useState(false);
+  const [triggerBranch, setTriggerBranch] = useState("");
+  const [triggerCommitSha, setTriggerCommitSha] = useState("");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["pipeline", teamId, pipelineId],
     queryFn: () => api.getPipeline(teamId!, pipelineId!),
+    enabled: !!teamId && !!pipelineId,
+  });
+
+  // Runs query
+  const { data: runsData } = useQuery({
+    queryKey: ["runs", teamId, pipelineId],
+    queryFn: () => api.listRuns(teamId!, pipelineId!),
     enabled: !!teamId && !!pipelineId,
   });
 
@@ -66,6 +82,20 @@ export default function PipelineDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pipelines", teamId] });
       navigate("/pipelines");
+    },
+  });
+
+  const triggerRunMutation = useMutation({
+    mutationFn: (data: { branch: string; commitSha?: string }) =>
+      api.triggerRun(teamId!, pipelineId!, data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["runs", teamId, pipelineId] });
+      setShowTriggerDialog(false);
+      setTriggerBranch("");
+      setTriggerCommitSha("");
+      if (data?.run?.id) {
+        navigate(`/pipelines/${pipelineId}/runs/${data.run.id}`);
+      }
     },
   });
 
@@ -236,6 +266,18 @@ export default function PipelineDetail() {
           ) : (
             <>
               <button
+                onClick={() => {
+                  setShowTriggerDialog(!showTriggerDialog);
+                  if (!triggerBranch) {
+                    setTriggerBranch(pipeline.repoDefaultBranch || "main");
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-400/10 border border-emerald-400/20 px-4 py-2 text-sm font-medium text-emerald-400 hover:bg-emerald-400/20"
+              >
+                <Play className="h-4 w-4" />
+                Trigger Run
+              </button>
+              <button
                 onClick={() => startEditing("form")}
                 className="inline-flex items-center gap-2 rounded-lg border border-[#333355] px-4 py-2 text-sm font-medium text-[#e4e4f0] hover:bg-[#1a1a2e]"
               >
@@ -253,6 +295,59 @@ export default function PipelineDetail() {
           )}
         </div>
       </div>
+
+      {/* Trigger Run Dialog */}
+      {showTriggerDialog && (
+        <div className="mb-8 rounded-xl border border-emerald-400/20 bg-emerald-400/5 p-5">
+          <h3 className="mb-3 text-sm font-semibold text-emerald-400">Trigger Pipeline Run</h3>
+          <div className="flex gap-3 items-end">
+            <div className="flex-1">
+              <label className="block text-xs text-[#8888a0] mb-1">Branch</label>
+              <input
+                type="text"
+                value={triggerBranch}
+                onChange={(e) => setTriggerBranch(e.target.value)}
+                placeholder="main"
+                className="w-full rounded-md border border-[#333355] bg-[#0a0a0f] px-3 py-1.5 text-sm text-[#e4e4f0] focus:outline-none focus:border-emerald-400"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs text-[#8888a0] mb-1">Commit SHA (optional)</label>
+              <input
+                type="text"
+                value={triggerCommitSha}
+                onChange={(e) => setTriggerCommitSha(e.target.value)}
+                placeholder="HEAD"
+                className="w-full rounded-md border border-[#333355] bg-[#0a0a0f] px-3 py-1.5 font-mono text-sm text-[#e4e4f0] focus:outline-none focus:border-emerald-400"
+              />
+            </div>
+            <button
+              onClick={() =>
+                triggerRunMutation.mutate({
+                  branch: triggerBranch || "main",
+                  commitSha: triggerCommitSha || undefined,
+                })
+              }
+              disabled={triggerRunMutation.isPending || !triggerBranch.trim()}
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-400/20 px-4 py-1.5 text-sm font-medium text-emerald-400 hover:bg-emerald-400/30 disabled:opacity-50"
+            >
+              <Play className="h-4 w-4" />
+              {triggerRunMutation.isPending ? "Triggering..." : "Run"}
+            </button>
+            <button
+              onClick={() => setShowTriggerDialog(false)}
+              className="px-3 py-1.5 text-sm text-[#8888a0] hover:text-[#e4e4f0]"
+            >
+              Cancel
+            </button>
+          </div>
+          {triggerRunMutation.isError && (
+            <p className="mt-2 text-xs text-red-400">
+              {(triggerRunMutation.error as any)?.message || "Failed to trigger run"}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Stages */}
       <div className="rounded-xl border border-[#252540] bg-[#131320] p-6">
@@ -435,6 +530,54 @@ export default function PipelineDetail() {
           </div>
         )}
       </div>
+
+      {/* Recent Runs */}
+      {runsData?.runs && runsData.runs.length > 0 && (
+        <div className="mt-6 rounded-xl border border-[#252540] bg-[#131320] p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-[#e4e4f0]">
+              Recent Runs
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {runsData.runs.slice(0, 10).map((run: any) => (
+              <Link
+                key={run.id}
+                to={`/pipelines/${pipelineId}/runs/${run.id}`}
+                className="flex items-center justify-between rounded-lg border border-[#252540] bg-[#1a1a2e] p-3 hover:border-primary/30 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  {run.status === "success" ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  ) : run.status === "failed" ? (
+                    <XCircle className="h-4 w-4 text-red-400" />
+                  ) : run.status === "running" ? (
+                    <Play className="h-4 w-4 text-blue-400 animate-pulse" />
+                  ) : run.status === "awaiting_approval" ? (
+                    <AlertTriangle className="h-4 w-4 text-amber-400" />
+                  ) : run.status === "cancelled" ? (
+                    <StopCircle className="h-4 w-4 text-[#666680]" />
+                  ) : (
+                    <Clock className="h-4 w-4 text-[#666680]" />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-[#e4e4f0]">
+                      Run {run.id.substring(0, 8)}
+                    </p>
+                    <p className="text-xs text-[#666680]">
+                      {run.branch} • {run.commitSha?.substring(0, 7)} • {run.passedStages}/{run.totalStages} stages
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#8888a0] capitalize">{run.status.replace(/_/g, " ")}</span>
+                  <ChevronRight className="h-3.5 w-3.5 text-[#666680]" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

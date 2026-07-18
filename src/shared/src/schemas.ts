@@ -90,8 +90,8 @@ export const connectRepositorySchema = z.object({
 // Run schemas
 // ============================================================
 export const triggerRunSchema = z.object({
-  commitSha: z.string().min(1),
   branch: z.string().min(1),
+  commitSha: z.string().optional(),
   commitMessage: z.string().optional(),
 });
 
